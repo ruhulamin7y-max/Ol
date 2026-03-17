@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>EduSeries - MCQ Platform</title>
+    <title>Radiography Rankers Mock Test - MCQ Platform</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
@@ -38,7 +38,7 @@
 
 <script>
 // --- CONFIGURATION ---
-const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzyJ6BzAAsIqX_QVHbxjWHbjnPmEdUb0kr7uLo6wtFIlaEFAlsLkG5USuN5VKqZdIvA/exec";
 const firebaseConfig = { /* YOUR FIREBASE CONFIG */ };
 firebase.initializeApp(firebaseConfig);
 
@@ -96,7 +96,7 @@ async function handleBuyNow(id, price) {
 function openRazorpay(id, price) {
     const options = {
         "key": "YOUR_RAZORPAY_KEY",
-        "amount": price * 100, // in paise
+        "amount": price * 10, // in paise
         "currency": "INR",
         "name": "EduSeries",
         "handler": async function (response) {
