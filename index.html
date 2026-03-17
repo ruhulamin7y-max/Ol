@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EduSeries - MCQ Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth-compat.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-primary px-3">
+    <span class="navbar-brand">EduSeries Platform</span>
+    <div id="userProfile" class="text-white"></div>
+</nav>
+
+<div class="container mt-5">
+    <!-- 1. COURSE OVERVIEW (Visible to all) -->
+    <div id="courseOverview">
+        <h2 class="mb-4">Our MCQ Courses</h2>
+        <div id="courseList" class="row"></div>
+    </div>
+
+    <!-- 2. MCQ ENGINE (Locked by Payment) -->
+    <div id="quizEngine" class="d-none">
+        <div class="card p-4">
+            <h4 id="qTitle">Course Content</h4>
+            <hr>
+            <div id="qContainer">
+                <h5 id="questionText"></h5>
+                <div id="options" class="d-grid gap-2 my-3"></div>
+                <p id="resultMsg" class="fw-bold"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- CONFIGURATION ---
+const SCRIPT_URL = "YOUR_APPS_SCRIPT_URL";
+const firebaseConfig = { /* YOUR FIREBASE CONFIG */ };
+firebase.initializeApp(firebaseConfig);
+
+let currentUser = null;
+let activeCourseId = null;
+
+// --- STEP 1: LOAD COURSES (Public) ---
+async function loadCourses() {
+    const res = await fetch(SCRIPT_URL + "?type=getCourses");
+    const courses = await res.json();
+    let html = '';
+    courses.forEach(c => {
+        html += `
+        <div class="col-md-4">
+            <div class="card shadow-sm p-3">
+                <h4>${c[1]}</h4>
+                <p>${c[3]}</p>
+                <p class="text-primary fw-bold">₹${c[2]}</p>
+                <button class="btn btn-success" onclick="handleBuyNow('${c[0]}', ${c[2]})">Buy & Start Test</button>
+            </div>
+        </div>`;
+    });
+    document.getElementById('courseList').innerHTML = html;
+}
+loadCourses();
+
+// --- STEP 2: HANDLE BUY NOW (Login -> Check -> Pay) ---
+async function handleBuyNow(id, price) {
+    activeCourseId = id;
+    
+    // 1. Force Login if not logged in
+    if (!firebase.auth().currentUser) {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        const res = await firebase.auth().signInWithPopup(provider);
+        currentUser = res.user;
+    } else {
+        currentUser = firebase.auth().currentUser;
+    }
+
+    // 2. Check if already paid
+    const check = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: "checkAccess", email: currentUser.email, courseId: id })
+    });
+    const access = await check.json();
+
+    if (access.hasAccess) {
+        startQuiz(id);
+    } else {
+        openRazorpay(id, price);
+    }
+}
+
+// --- STEP 3: RAZORPAY PAYMENT ---
+function openRazorpay(id, price) {
+    const options = {
+        "key": "YOUR_RAZORPAY_KEY",
+        "amount": price * 100, // in paise
+        "currency": "INR",
+        "name": "EduSeries",
+        "handler": async function (response) {
+            // Record success in Google Sheets
+            await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "recordPayment", email: currentUser.email, courseId: id })
+            });
+            alert("Payment Successful!");
+            startQuiz(id);
+        }
+    };
+    const rzp = new Razorpay(options);
+    rzp.open();
+}
+
+// --- STEP 4: START QUIZ (Unlocked) ---
+let questions = [];
+let currentIdx = 0;
+
+async function startQuiz(id) {
+    const res = await fetch(SCRIPT_URL + "?type=getQuestions&courseId=" + id);
+    questions = await res.json();
+    
+    document.getElementById('courseOverview').classList.add('d-none');
+    document.getElementById('quizEngine').classList.remove('d-none');
+    showQuestion();
+}
+
+function showQuestion() {
+    const q = questions[currentIdx];
+    document.getElementById('questionText').innerText = `${q[1]}. ${q[2]}`;
+    
+    let html = '';
+    ['A','B','C','D'].forEach((opt, i) => {
+        html += `<button class="btn btn-outline-primary" onclick="checkAns('${opt}', '${q[7]}')">${opt}. ${q[i+3]}</button>`;
+    });
+    document.getElementById('options').innerHTML = html;
+}
+
+function checkAns(selected, correct) {
+    if(selected === correct) {
+        alert("Correct! +4 Marks");
+    } else {
+        alert("Wrong! -1 Mark");
+    }
+    currentIdx++;
+    if(currentIdx < questions.length) showQuestion();
+    else alert("Quiz Finished!");
+}
+</script>
+</body>
+</html>
