@@ -1,0 +1,30 @@
+<div class="container p-5">
+    <h3>Admin: Add Question in Series</h3>
+    <input type="text" id="cid" placeholder="Course ID (e.g. 101)" class="form-control mb-2">
+    <input type="number" id="qno" placeholder="Question Number (e.g. 1)" class="form-control mb-2">
+    <textarea id="qtext" placeholder="Question Text" class="form-control mb-2"></textarea>
+    <input type="text" id="oa" placeholder="Option A" class="form-control mb-2">
+    <input type="text" id="ob" placeholder="Option B" class="form-control mb-2">
+    <input type="text" id="oc" placeholder="Option C" class="form-control mb-2">
+    <input type="text" id="od" placeholder="Option D" class="form-control mb-2">
+    <input type="text" id="ans" placeholder="Correct Answer (A, B, C, or D)" class="form-control mb-2">
+    <button onclick="upload()" class="btn btn-dark">Upload to Sheet</button>
+</div>
+
+<script>
+async function upload() {
+    const data = {
+        action: "adminUpload",
+        courseId: document.getElementById('cid').value,
+        qNo: document.getElementById('qno').value,
+        q: document.getElementById('qtext').value,
+        a: document.getElementById('oa').value,
+        b: document.getElementById('ob').value,
+        c: document.getElementById('oc').value,
+        d: document.getElementById('od').value,
+        ans: document.getElementById('ans').value
+    };
+    await fetch('YOUR_APPS_SCRIPT_URL', { method: 'POST', body: JSON.stringify(data) });
+    alert("Question saved in series!");
+}
+</script>
