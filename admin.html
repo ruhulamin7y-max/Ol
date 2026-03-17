@@ -24,7 +24,7 @@ async function upload() {
         d: document.getElementById('od').value,
         ans: document.getElementById('ans').value
     };
-    await fetch('YOUR_APPS_SCRIPT_URL', { method: 'POST', body: JSON.stringify(data) });
+    await fetch('https://script.google.com/macros/s/AKfycbzyJ6BzAAsIqX_QVHbxjWHbjnPmEdUb0kr7uLo6wtFIlaEFAlsLkG5USuN5VKqZdIvA/exec', {method: 'POST', body: JSON.stringify(data) });
     alert("Question saved in series!");
 }
 </script>
